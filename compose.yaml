@@ -1,0 +1,45 @@
+# Miniature of Biblia Berea's compose.yaml: web (public) + api (internal, owns the SQLite volume).
+services:
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      BIBLE_API_URL: http://api:8086
+      # Tend fills TEND_URL_WEB from the web service's address.
+      BEREA_PUBLIC_ORIGIN: ${TEND_URL_WEB}
+    expose: ["3000"]
+    depends_on:
+      api:
+        condition: service_healthy
+    x-tend:
+      address: bibliaberea-fixture
+      web_port: 3000
+      swap: side-by-side
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      BIBLE_API_ADDR: 0.0.0.0:8086
+      BEREA_DB_PATH: ${BEREA_DB_PATH:-}
+      BEREA_PUBLIC_ORIGIN: ${TEND_URL_WEB}
+    volumes:
+      - berea-data:/data
+    expose: ["8086"]
+    deploy:
+      replicas: 1
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8086/health', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    x-tend:
+      internal: true
+
+volumes:
+  berea-data:
