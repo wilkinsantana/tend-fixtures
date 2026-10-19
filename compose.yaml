@@ -1,0 +1,11 @@
+services:
+  app:
+    build: .
+    environment:
+      # Listed: reaches the container when GREETING is set in the env set.
+      GREETING: ${GREETING:-}
+      # FEATURE_FLAG is deliberately NOT listed here. Setting it in the env set must
+      # make Tend warn "env-set key FEATURE_FLAG is not passed to any service".
+    expose: ["3000"]
+    x-tend:
+      web_port: 3000
