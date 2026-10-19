@@ -1,0 +1,48 @@
+services:
+  web:
+    build: ./web
+    environment:
+      API_URL: http://api:8080
+      FIXTURE_MESSAGE: ${FIXTURE_MESSAGE:-}
+    expose: ["3000"]
+    depends_on:
+      api:
+        condition: service_healthy
+    x-tend:
+      web_port: 3000
+
+  api:
+    build: ./api
+    environment:
+      DATABASE_URL: postgres://fixture:${DB_PASSWORD}@db:5432/fixture?sslmode=disable
+    expose: ["8080"]
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    x-tend:
+      internal: true
+
+  db:
+    image: postgres:16.6-alpine
+    environment:
+      POSTGRES_USER: fixture
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: fixture
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fixture -d fixture"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    x-tend:
+      internal: true
+
+volumes:
+  pgdata:
