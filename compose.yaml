@@ -1,0 +1,13 @@
+services:
+  web:
+    build: .
+    environment:
+      FIXTURE_MESSAGE: ${FIXTURE_MESSAGE:-}
+    expose: ["3000"]
+    x-tend:
+      web_port: 3000
+  worker:
+    build: .
+    command: ["node", "worker.js"]
+    x-tend:
+      internal: true
