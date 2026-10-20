@@ -3,7 +3,9 @@ id: go-nodockerfile
 path: autodetect
 port: 8080
 needs: []
-expect: autodetect Go: go build, run binary, port from PORT (default 8080); today: not buildable
+expect: deploys and answers (Railpack source build)
+e2e_recipe: railpack
+e2e_provider: golang
 ---
 
 # go-nodockerfile
@@ -12,8 +14,7 @@ Same Go app, no Dockerfile (go.mod + main.go).
 
 ## Deploy on Tend
 Git app from this branch.
-- Today: unsupported, needs a Dockerfile.
-- Planned autodetect (Go): `go build -o app .`, run `./app`, inject `PORT`.
+- Tend builds it from source with Railpack (Go): `go build`, runs the binary, sets `PORT` to the web address port (8080).
 
 ## Verify
 - `GET /health` -> `ok`
