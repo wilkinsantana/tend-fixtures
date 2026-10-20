@@ -3,7 +3,10 @@ id: python-nodockerfile
 path: autodetect
 port: 8000
 needs: []
-expect: autodetect Python: pip install -r requirements.txt, start command gunicorn app:app (no Procfile, must be inferred or asked); today: not buildable
+expect: deploys and answers (Railpack source build)
+e2e_recipe: railpack
+e2e_provider: python
+start_command: gunicorn --bind 0.0.0.0:${PORT:-8000} app:app
 ---
 
 # python-nodockerfile
@@ -12,8 +15,7 @@ Flask app with `requirements.txt` (flask, gunicorn), no Dockerfile, no Procfile.
 
 ## Deploy on Tend
 Git app from this branch.
-- Today: unsupported, needs a Dockerfile.
-- Planned autodetect (Python): `pip install -r requirements.txt`; start command is ambiguous (`app.py` runs Flask dev server on PORT, gunicorn is in requirements: `gunicorn app:app`). Tend should pick one or ask, and say which.
+- Tend builds it from source with Railpack (Python): pip install in a venv. Railpack infers `gunicorn ... main:app`, which is wrong for `app.py`, so this fixture supplies the start command (front matter `start_command`) the way a user would in the add-app form.
 
 ## Verify
 - `GET /health` -> `ok`
