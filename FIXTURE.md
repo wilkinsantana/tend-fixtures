@@ -3,7 +3,7 @@ id: dockerfile-subdir
 path: dockerfile
 port: 3000
 needs: [dockerfile-path, build-context]
-expect: root has no Dockerfile: Tend must let the user set dockerfile=docker/web.Dockerfile, context=app/; otherwise a clear 'no Dockerfile at root' error
+expect: deploys and answers: with dockerfile=docker/web.Dockerfile and context=app the Dockerfile sits outside the build context (both stay inside the repository)
 ---
 
 # dockerfile-subdir
@@ -21,4 +21,4 @@ Local equivalent: `docker build -f docker/web.Dockerfile app`
 - `GET /` -> `fixture dockerfile-subdir OK`
 
 ## Expected detection
-Not auto-detected at root (no `./Dockerfile`). Ideal: Tend finds `docker/*.Dockerfile` and suggests it with context `app/`.
+Not auto-detected at root (no `./Dockerfile`); the probe lists `docker/web.Dockerfile` as a candidate. The Dockerfile path is read from the build context first, then from the repository root, so `docker/web.Dockerfile` and `../docker/web.Dockerfile` both work with context `app`.
