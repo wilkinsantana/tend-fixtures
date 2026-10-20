@@ -6,22 +6,22 @@ Small test apps for exercising Tend deploys: every deployment form, confusing la
 
 Conventions: pinned base images, no secrets, builds in seconds. Every app serves `GET /` -> `fixture <id> OK` plus `message: <FIXTURE_MESSAGE or (unset)>` (so a test can assert env reached the container) and `GET /health` -> `ok` (unless noted).
 
-Tend today builds a Git app only from a Dockerfile (or a root `index.html` served by generated nginx); Compose is a separate source type; there is no buildpack autodetection yet. "autodetect" fixtures are targets for the planned Node/SvelteKit, Vite, Go, Python detection; today they should fail with a clear message.
+Tend builds a Git app from a Dockerfile, from a static `index.html` (root or one subfolder), or from source with Railpack (Node, Go, Python, Vite static); Compose is a separate source type. The "autodetect" fixtures deploy through Railpack since 0.11.x; `python-nodockerfile` carries a `start_command` because Railpack guesses `main:app`.
 
 Build time is warm (base image already pulled, `docker build` locally); size is `docker image inspect`. Measured 2026-10-18.
 
 | id | stack | path | needs | expected detection | expected result | exercises | build / image |
 |---|---|---|---|---|---|---|---|
 | `static-plain` | HTML | static | - | static | OK | root index.html -> generated nginx | - |
-| `static-subdir` | HTML | static | - | not at root; ideal: publish dir `public/` | today: clear failure/suggestion | index.html not at root | - |
-| `vite-static` | Vite vanilla | autodetect | - | vite-static (`npm run build` -> `dist/`) | today: unsupported; planned OK | Vite static detection; must not publish source | npm build 1 s |
+| `static-subdir` | HTML | static | - | not at root; ideal: publish dir `public/` | OK (static_subdir, serves `public/`) | index.html not at root | - |
+| `vite-static` | Vite vanilla | autodetect | - | vite-static (`npm run build` -> `dist/`) | OK (Railpack) | Vite static detection; must not publish source | npm build 1 s |
 | `node-express-dockerfile` | Node 22 Express | dockerfile | PORT, FIXTURE_MESSAGE | dockerfile, port 3000 from EXPOSE | OK | baseline Dockerfile build | 3 s / 57 MB |
-| `node-express-nodockerfile` | Node 22 Express | autodetect | PORT | node (`npm ci`, `npm start`) | today: unsupported; planned OK | Node autodetect | - |
+| `node-express-nodockerfile` | Node 22 Express | autodetect | PORT | node (`npm ci`, `npm start`) | OK (Railpack) | Node autodetect | - |
 | `sveltekit-node` | SvelteKit adapter-node | dockerfile | FIXTURE_MESSAGE (runtime) | dockerfile, port 3000 | OK | multi-stage npm build, runtime env | 7 s / 55 MB |
 | `go-http` | Go 1.23 | dockerfile | - | dockerfile, NO EXPOSE (8080) | OK with port warning/guess | undeclared port | 7 s / 8 MB |
-| `go-nodockerfile` | Go 1.23 | autodetect | - | go (`go build`) | today: unsupported; planned OK | Go autodetect | - |
+| `go-nodockerfile` | Go 1.23 | autodetect | - | go (`go build`) | OK (Railpack) | Go autodetect | - |
 | `python-flask` | Flask + gunicorn | dockerfile | FIXTURE_MESSAGE | dockerfile, port 8000 | OK | python Dockerfile | 8 s / 50 MB |
-| `python-nodockerfile` | Flask | autodetect | - | python (requirements.txt; start cmd ambiguous) | today: unsupported; planned OK | Python autodetect, start-command ambiguity | - |
+| `python-nodockerfile` | Flask | autodetect | - | python (requirements.txt; start cmd ambiguous) | OK (Railpack) | Python autodetect, start-command ambiguity | - |
 | `dockerfile-subdir` | Node | dockerfile | dockerfile path + context | none at root; ideal: `docker/web.Dockerfile`, ctx `app/` | OK once path/context set | non-root Dockerfile and context | 1 s / 55 MB |
 | `dockerfile-and-compose` | Node | compose | - | ambiguous: suggest Compose | OK via Compose (web + worker) | Dockerfile vs compose.yaml ambiguity | 14 s / 55 MB |
 | `compose-web-api-db` | Node + Go + postgres:16.6-alpine | compose | DB_PASSWORD (secret), volume `pgdata` | compose; api/db internal | OK; counter survives redeploy | db, secret var, volume persistence, healthchecks | 52 s up (3 builds) / web 55 MB, api ~8 MB |
